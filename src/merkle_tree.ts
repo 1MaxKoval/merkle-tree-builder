@@ -18,12 +18,10 @@ class Node {
     right: Node | null
     parent: Node | null
     constructor(data: number, 
-        left: Node | null = null, 
-        right: Node | null = null,
         parent: Node | null = null) {
         this.data = data;
-        this.left = left;
-        this.right = right;
+        this.left = null;
+        this.right = null;
         this.parent = parent;
     }
 }
@@ -32,9 +30,23 @@ class DynamicMerkleTree {
     head: Node;
     depth: number;
 
-    constructor(initial_data: string) {
-        this.head = new Node(hash(initial_data));
+    constructor(initialData: string) {
+        this.head = new Node(hash(initialData));
         this.depth = 0;
+    }
+
+    private hashSum(startingNode: Node) {
+        let m = '';
+        if (startingNode.left !== null) {
+            m += startingNode.left.data.toString();
+        }
+        if (startingNode.right !== null) {
+            m += startingNode.right.data.toString();
+        }
+        startingNode.data = hash(m);
+        if (startingNode.parent !== null) {
+            this.hashSum(startingNode.parent);
+        }
     }
 
     addNode(data: string) {
@@ -47,19 +59,20 @@ class DynamicMerkleTree {
             [a, c]  = q.pop()!;
             if (c === this.depth - 1) {
                 if (a.left === null) {
-                    a.left = new Node(hash(data), null, null, a);
+                    a.left = new Node(hash(data), a);
                 }
                 else if (a.right === null) {
-                    a.right = new Node(hash(data), null, null, a);
+                    a.right = new Node(hash(data), a);
                 }
-                // TODO: Stop + chain compute base hash
+                this.hashSum(a);
+                break;
             }
             else if (a.left === null) {
-                a.left = new Node(-1, null, null, a);
+                a.left = new Node(-1, a);
                 q.push([a.left, c++]);
             }
             else if (a.right === null) {
-                a.right = new Node(-1, null, null, a);
+                a.right = new Node(-1, a);
                 q.push([a.right, c++]);
             }
             else {
@@ -67,7 +80,7 @@ class DynamicMerkleTree {
                 q.push([a.left, c++]);
             }
         }
-        // Case: No more space, need new root
+        // Pass: finish later lmao
     }
 
 }
